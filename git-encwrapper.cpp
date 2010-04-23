@@ -585,29 +585,34 @@ void filter_patch(std::ostream &dst_stream, std::istream &src_stream, bool src_i
 int filter_patch_git_to_wrapper(char **argv)
 {
 	int child_pipe_int;
-	if(!create_process_with_pipe_r(git_filename, argv, &child_pipe_int, NULL)){
+	pid_t child_pid;
+	if(!create_process_with_pipe_r(git_filename, argv, &child_pipe_int, &child_pid)){
 		return -1;
 	}
 	PipeHandle child_pipe(child_pipe_int);
 	FDInputStream child_stream(child_pipe);
 
 	filter_patch(std::cout, child_stream, false);
-	wait(NULL);
-	return 0;
+	int status;
+	waitpid(child_pid, &status, 0);
+	return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
 }
 
 int filter_patch_wrapper_to_git(char **argv)
 {
 	int child_pipe_int;
-	if(!create_process_with_pipe_w(git_filename, argv, &child_pipe_int, NULL)){
+	pid_t child_pid;
+	if(!create_process_with_pipe_w(git_filename, argv, &child_pipe_int, &child_pid)){
 		return -1;
 	}
 	PipeHandle child_pipe(child_pipe_int);
 	FDOutputStream child_stream(child_pipe);
 
 	filter_patch(child_stream, std::cin, true);
-	wait(NULL);
-	return 0;
+	child_pipe.reset(); //EOF
+	int status;
+	waitpid(child_pid, &status, 0);
+	return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
 }
 
 
