@@ -31,6 +31,7 @@ $(LIBGIT): $(wildcard ./libgit/*.h) $(wildcard ./libgit/*.c)
 .PHONY: clean
 clean:
 	-rm $(OBJS) $(TARGET) $(DEPS)
+	cd ./libgit && $(MAKE) clean
 
 # Release
 .PHONY: release
