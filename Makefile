@@ -36,5 +36,5 @@ clean:
 .PHONY: release
 release:
 	make clean
-	make "CFLAGS=-O3 -Wall -ansi -pedantic"
+	make "CFLAGS=-O3 -Wall"
 	strip $(TARGET)
