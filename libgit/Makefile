@@ -21,4 +21,4 @@ wrapper.o: $(LIB_H)
 
 
 clean:
-	rm -f $(LIB_OBJS)
+	rm -f $(LIB_OBJS) $(LIB_FILE)
