@@ -624,6 +624,7 @@ void filter_patch(std::ostream &dst_stream, std::istream &src_stream, bool src_i
 
 		dst_stream << cvt.convert_str(src_line);
 	}
+	dst_stream.flush();
 }
 
 int filter_patch_git_to_wrapper(char **argv)
