@@ -464,52 +464,6 @@ public:
 
 
 
-/**
- * 改行コードを含めるstd::getlineです。
- * std::getlineだとEOFの直前に改行コードがあるかどうかを判別できないので、この関数を使います。
- */
-std::istream &getline_br(std::istream &in, std::string &str)
-{
-	std::size_t extracted = 0;
-	const std::size_t n = str.max_size();
-	std::ios_base::iostate err = std::ios_base::goodbit;
-	std::istream::sentry cerb(in, true);
-	if(cerb){
-		str.erase();
-			
-		int c = in.rdbuf()->sgetc();
-		while(extracted < n && c != EOF && c != '\n' && c != '\r'){
-			str += char(c);
-			++extracted;
-			c = in.rdbuf()->snextc();
-		}
-
-		while(extracted < n && c != EOF && (c == '\n' || c == '\r')){
-			str += char(c);
-			++extracted;
-			c = in.rdbuf()->snextc();
-		}
-
-		if (c == EOF){
-			err |= std::ios_base::eofbit;
-		}
-		else if(extracted >= n){
-			err |= std::ios_base::failbit;
-		}
-	}
-	
-	if (!extracted){
-		err |= std::ios_base::failbit;
-	}
-	if (err){
-		in.setstate(err);
-	}
-	
-	return in;
-}
-
-
-
 // ---------------------------------------------------------------------------
 // file encoding detection (.gitattributes)
 
@@ -604,7 +558,7 @@ void filter_patch(std::ostream &dst_stream, std::istream &src_stream, bool src_i
 	const sregex re_diff_header = sregex::compile("^diff --git a/(.+) b/(.+)$");
 	
 	std::string src_line;
-	while(getline_br(src_stream, src_line)){
+	while(std::getline(src_stream, src_line)){
 
 		smatch m;
 		if(regex_match(src_line, m, re_diff_header)){
@@ -623,6 +577,9 @@ void filter_patch(std::ostream &dst_stream, std::istream &src_stream, bool src_i
 		}
 
 		dst_stream << cvt.convert_str(src_line);
+		if(!src_stream.eof()){ //行がEOFで終わっていないなら改行する。
+			dst_stream << '\n';
+		}
 	}
 	dst_stream.flush();
 }
