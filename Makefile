@@ -6,7 +6,7 @@ MAKEDEPEND.cpp = $(CXX) -MM
 CPPS = git-encwrapper.cpp
 OBJS = ${CPPS:.cpp=.o}
 DEPS = ${CPPS:.cpp=.d}
-TARGET = git-encwrapper.exe
+TARGET = git-encwrapper
 LIBGIT = ./libgit/libgit.a
 LIBS = -liconv $(LIBGIT)
 
