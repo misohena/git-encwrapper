@@ -621,8 +621,13 @@ int filter_patch_wrapper_to_git(char **argv)
 
 int main(int argc, char*argv[])
 {
+	// argv[0]をgit_filenameにしないと、
+	// 「fatal: cannot handle encwrapper internally」
+	// のようなエラーが発生する場合があるようなので、argv[0]を書き換える。
+	argv[0] = const_cast<char *>(git_filename);
+
+	// gitコマンド名を取得する。ハイフン以外で始まる最初の引数。
 	using namespace boost::lambda;
-	
 	char **argv_cmdname_pos = std::find_if(argv+1, argv+argc, *_1 != '-');
 	const char *cmdname = (argv_cmdname_pos == argv+argc) ? "" : *argv_cmdname_pos;
 

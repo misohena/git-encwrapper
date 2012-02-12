@@ -134,7 +134,7 @@ gitコマンドが標準でこのくらいのことが出来ないなんて、�
 
 gitのソースコードから属性取得部分を拝借しました。libgitディレクトリの中
 です。出来るだけ余計なものが入らないように、不要な部分は#if
-GIT_ENCWRAPPER_CUTOFF〜#endifでカットしてあります。テキトーに処理したの
+GIT_ENCWRAPPER_CUTOFF～#endifでカットしてあります。テキトーに処理したの
 で、変な動作をしたらすみません。git_path関数を何もしない関数に置き換え
 てしまっているので、カレントディレクトリがリポジトリがあるディレクトリ
 じゃないとうまく動かないかもしれません。
@@ -154,3 +154,9 @@ xpressiveを使ってしまいました。xpressiveはお手軽です。regexの
 しては、git-configでi18n.logOutputEncodingがあるので、比較的融通が利き
 ます。でも--pretty=format:%sでの出力が変換されないんですけど……。
 
+「fatal: cannot handle encwrapper internally」というエラーメッセージが
+出ることがありました。execvpに渡すプログラム名がgitなのにargv[0]が
+git-encwrapperであることが原因だったようです。argv[0]を書き換えるように
+しました。どうもexecvpで呼ぶ先がmsysgitだとこのエラーメッセージは出ず、
+cygwinのgitだと出るようです。私はmsysgitを使っていたので気づきませんで
+した。
