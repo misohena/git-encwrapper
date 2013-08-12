@@ -4,6 +4,10 @@ git用文字エンコーディング調整ラッパー
 AKIYAMA Kouhei
 2010-04-23
 
+*お知らせ
+
+2013-08-12 64ビット版のcygwinで正しく動かないようです。magitからgitを呼び出すときに、このラッパーと同様のことを行うEmacs Lispを書いたので、Emacsから使うときには参考にしてください。 http://www.greenwood.co.jp/~k-aki/diary/diary201308.xhtml#d20130812a
+
 *目的
 
 git-encwrapperは、gitコマンドをラップして入出力の文字コード(文字エンコー
