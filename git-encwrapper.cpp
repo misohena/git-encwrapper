@@ -332,7 +332,7 @@ bool create_process_with_pipe_r(const char *cmd_filename, char * const cmd_argv[
 		// parent
 		to_parent_w.reset();
 
-		if(*result_pipe){
+		if(result_pipe){
 			*result_pipe = to_parent_r.detach();
 		}
 		if(result_cpid){
