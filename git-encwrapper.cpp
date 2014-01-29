@@ -11,6 +11,7 @@
 #include <iostream>
 #include <istream>
 #include <ostream>
+#include <fstream>
 #include <streambuf>
 #include <cstdio>
 #include <cerrno>
@@ -630,6 +631,15 @@ int main(int argc, char*argv[])
 	using namespace boost::lambda;
 	char **argv_cmdname_pos = std::find_if(argv+1, argv+argc, *_1 != '-');
 	const char *cmdname = (argv_cmdname_pos == argv+argc) ? "" : *argv_cmdname_pos;
+
+#if 0
+	std::ofstream fs("/tmp/git-encwrapper.log", std::ios::out | std::ios::app | std::ios::ate);
+	fs << "[DEBUG]";
+	for(int i = 0; i < argc; ++i){
+		fs << argv[i] << " ";
+	}
+	fs << std::endl;
+#endif
 
 	if(strcmp(cmdname, "diff") == 0){
 		return filter_patch_git_to_wrapper(argv);
