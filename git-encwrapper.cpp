@@ -619,6 +619,23 @@ int filter_patch_wrapper_to_git(char **argv)
 }
 
 
+const char *get_git_command_name(int argc, char *argv[])
+{
+	for(int i = 1; i < argc; ++i){
+		const char *arg = argv[i];
+		if(arg[0] == '-'){ // skip options
+			if(arg[1] == 'c'){ //-c name=value
+				++i; // skip "name=value"
+			}
+		}
+		else{
+			return arg;
+		}
+	}
+	return "";
+}
+
+
 
 int main(int argc, char*argv[])
 {
@@ -629,8 +646,7 @@ int main(int argc, char*argv[])
 
 	// gitコマンド名を取得する。ハイフン以外で始まる最初の引数。
 	using namespace boost::lambda;
-	char **argv_cmdname_pos = std::find_if(argv+1, argv+argc, *_1 != '-');
-	const char *cmdname = (argv_cmdname_pos == argv+argc) ? "" : *argv_cmdname_pos;
+	const char *cmdname = get_git_command_name(argc, argv);
 
 #if 0
 	std::ofstream fs("/tmp/git-encwrapper.log", std::ios::out | std::ios::app | std::ios::ate);
