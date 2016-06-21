@@ -552,11 +552,12 @@ const char *get_file_encoding(const std::string &filename)
  *  +この行を追加。
  *
  */
-void filter_patch(std::ostream &dst_stream, std::istream &src_stream, bool src_is_terminal)
+void filter_patch(std::ostream &dst_stream, std::istream &src_stream, bool src_is_terminal, bool no_prefix)
 {
 	using namespace boost::xpressive;
 	CodesetConverter cvt;
-	const sregex re_diff_header = sregex::compile("^diff --git a/(.+) b/(.+)$");
+	const sregex re_diff_header = sregex::compile(
+		no_prefix ? "^diff --git ([^ ]+) ([^ ]+)$" : "^diff --git a/([^ ]+) b/([^ ]+)$"); ///@todo --src-prefix(diff),--dst-prefix(diff), -p1(apply)
 	
 	std::string src_line;
 	while(std::getline(src_stream, src_line)){
@@ -585,7 +586,7 @@ void filter_patch(std::ostream &dst_stream, std::istream &src_stream, bool src_i
 	dst_stream.flush();
 }
 
-int filter_patch_git_to_wrapper(char **argv)
+int filter_patch_git_to_wrapper(char **argv, bool no_prefix)
 {
 	int child_pipe_int;
 	pid_t child_pid;
@@ -595,13 +596,13 @@ int filter_patch_git_to_wrapper(char **argv)
 	PipeHandle child_pipe(child_pipe_int);
 	FDInputStream child_stream(child_pipe);
 
-	filter_patch(std::cout, child_stream, false);
+	filter_patch(std::cout, child_stream, false, no_prefix);
 	int status;
 	waitpid(child_pid, &status, 0);
 	return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
 }
 
-int filter_patch_wrapper_to_git(char **argv)
+int filter_patch_wrapper_to_git(char **argv, bool no_prefix)
 {
 	int child_pipe_int;
 	pid_t child_pid;
@@ -611,7 +612,7 @@ int filter_patch_wrapper_to_git(char **argv)
 	PipeHandle child_pipe(child_pipe_int);
 	FDOutputStream child_stream(child_pipe);
 
-	filter_patch(child_stream, std::cin, true);
+	filter_patch(child_stream, std::cin, true, no_prefix);
 	child_pipe.reset(); //EOF
 	int status;
 	waitpid(child_pid, &status, 0);
@@ -619,20 +620,47 @@ int filter_patch_wrapper_to_git(char **argv)
 }
 
 
-const char *get_git_command_name(int argc, char *argv[])
+const char *parse_git_command_name(int argc, char *argv[], bool &no_prefix)
 {
-	for(int i = 1; i < argc; ++i){
-		const char *arg = argv[i];
+	const char *cmdname = "";
+	int i = 1;
+	while(i < argc){
+		const char *arg = argv[i++];
 		if(arg[0] == '-'){ // skip options
-			if(arg[1] == 'c'){ //-c name=value
+			if(arg[1] == 'c' && i < argc){ //-c name=value
 				++i; // skip "name=value"
 			}
 		}
 		else{
-			return arg;
+			cmdname = arg;
+			break;
 		}
 	}
-	return "";
+	const bool cmd_is_diff = strcmp(cmdname, "diff") == 0;
+	const bool cmd_is_apply = strcmp(cmdname, "apply") == 0;
+	while(i < argc){
+		const char *arg = argv[i++];
+		if(arg[0] == '-'){
+			if(arg[1] == '-'){
+				if(arg[2] == '\0'){
+					break;
+				}
+				else if(cmd_is_diff && strcmp(arg, "--no-prefix") == 0){
+					no_prefix = true;
+				}
+			}
+			else if(cmd_is_apply && strcmp(arg, "-p0") == 0){
+				no_prefix = true;
+				///@todo Support -p<n> (n>=2)
+			}
+			///@todo --src-prefix=a/
+			///@todo --dst-prefix=b/
+		}
+		else{
+			break;
+		}
+	}
+	return cmdname;
 }
 
 
@@ -646,7 +674,8 @@ int main(int argc, char*argv[])
 
 	// gitコマンド名を取得する。ハイフン以外で始まる最初の引数。
 	using namespace boost::lambda;
-	const char *cmdname = get_git_command_name(argc, argv);
+	bool no_prefix = false;
+	const char * const cmdname = parse_git_command_name(argc, argv, no_prefix);
 
 #if 0
 	std::ofstream fs("/tmp/git-encwrapper.log", std::ios::out | std::ios::app | std::ios::ate);
@@ -658,10 +687,10 @@ int main(int argc, char*argv[])
 #endif
 
 	if(strcmp(cmdname, "diff") == 0){
-		return filter_patch_git_to_wrapper(argv);
+		return filter_patch_git_to_wrapper(argv, no_prefix);
 	}
 	else if(strcmp(cmdname, "apply") == 0){
-		return filter_patch_wrapper_to_git(argv);
+		return filter_patch_wrapper_to_git(argv, no_prefix);
 	}
 	else{
 		execvp(git_filename, argv);
